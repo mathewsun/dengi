@@ -1,0 +1,141 @@
+stages:
+  - build
+  - deploy
+  - deploy_production
+
+default:
+  image:
+    name: dtzar/helm-kubectl:$HELM_VERSION
+
+variables:
+  BRANCH_OR_TAG_NAME: $CI_COMMIT_REF_NAME
+  COMMIT_SHA: $CI_COMMIT_SHA
+
+  IMAGE_TAG_BRANCH_NAME: $CI_PROJECT_PATH:$BRANCH_OR_TAG_NAME
+  IMAGE_TAG_COMMIT_SHA: $CI_PROJECT_PATH:$COMMIT_SHA
+
+  DEPLOY_NAMESPACE_PRODUCTION: $CI_PROJECT_NAMESPACE-production
+
+
+  IMAGE_TAG_REF: $CI_PROJECT_PATH:$CI_COMMIT_REF_NAME
+  IMAGE_TAG_SHA: $CI_PROJECT_PATH:$CI_COMMIT_SHA
+  DEPLOY_NAME: $CI_PROJECT_NAME
+  DEPLOY_NAMESPACE: $CI_PROJECT_NAMESPACE-$CI_COMMIT_REF_SLUG
+
+
+validate_chart:
+  stage: build
+  script:
+    - helm repo add c2m $C2M_HELM_REPO_URL
+    - helm template      
+      --namespace $DEPLOY_NAMESPACE
+      --set ci.name="$DEPLOY_NAME"
+      --set ci.namespace="$DEPLOY_NAMESPACE"
+      --set ci.image="$C2M_REGISTRY/$IMAGE_TAG_SHA"
+      -v 6
+      -f ./helm-values.yaml
+      $CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG-$CI_PROJECT_NAMESPACE
+      c2m/generic-chart
+  only:
+    - dev
+    - master
+  when: on_success
+
+build_image:
+  stage: build
+  image: docker:18.09.6
+  services:
+    - name: docker:18.09.6-dind
+      command:
+        - /bin/sh
+        - -c
+        - |
+            dockerd-entrypoint.sh || exit
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - echo $REGISTRY_PASSWORD | docker login --username c2m-docker-registry-ci $C2M_REGISTRY_PROXY --password-stdin
+    - docker pull $C2M_REGISTRY_PROXY/$IMAGE_TAG_REF || true
+    - docker build --build-arg C2M_NUGET_GROUP_URL=$C2M_NUGET_GROUP_URL --cache-from $C2M_REGISTRY_PROXY/$IMAGE_TAG_REF -t $C2M_REGISTRY/$IMAGE_TAG_REF -t $C2M_REGISTRY/$IMAGE_TAG_SHA .
+    
+    - echo $REGISTRY_PASSWORD | docker login --username c2m-docker-registry-ci $C2M_REGISTRY --password-stdin
+    - docker push $C2M_REGISTRY/$IMAGE_TAG_REF
+    - docker push $C2M_REGISTRY/$IMAGE_TAG_SHA
+  only:
+    - master
+    - dev    
+  when: on_success
+
+
+deploy:
+  stage: deploy
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    url: http://$CI_PROJECT_NAME.$CI_PROJECT_NAMESPACE-$CI_COMMIT_REF_SLUG.k2.env.timo.group
+    on_stop: destroy_deployment
+  before_script:
+    - mkdir /tmp/kube2
+    - echo $KUBECONFIG_II | base64 -d > /tmp/kube2/config
+  script:
+    - helm repo add c2m $C2M_HELM_REPO_URL 
+    - helm upgrade
+      --kubeconfig /tmp/kube2/config    
+      --namespace $DEPLOY_NAMESPACE
+      --install
+      --atomic
+      --wait
+      --timeout 80s
+      --set ci.name="$DEPLOY_NAME"
+      --set ci.namespace="$DEPLOY_NAMESPACE"
+      --set ci.image="$C2M_REGISTRY/$IMAGE_TAG_SHA"
+      -v 6
+      -f ./helm-values.yaml
+      $CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG-$CI_PROJECT_NAMESPACE
+      c2m/generic-chart
+  only:
+    - dev
+  when: on_success
+
+deploy_production:
+  stage: deploy_production
+  environment:
+    name: production
+  before_script:
+    - mkdir /tmp/kube2
+    - echo $KUBECONFIG_II | base64 -d > /tmp/kube2/config
+  script:
+    - helm repo add c2m $C2M_HELM_REPO_URL 
+    - helm upgrade
+      --kubeconfig /tmp/kube2/config    
+      --namespace $DEPLOY_NAMESPACE_PRODUCTION
+      --install
+      --atomic
+      --wait
+      --timeout 80s
+      --set ci.name="$DEPLOY_NAME"
+      --set ci.namespace="$DEPLOY_NAMESPACE_PRODUCTION"
+      --set ci.image="$C2M_REGISTRY/$IMAGE_TAG_SHA"
+      -v 6      
+      -f ./helm-values.yaml
+      -f ./helm-values-production.yaml
+      $CI_PROJECT_NAME-production-$CI_PROJECT_NAMESPACE
+      c2m/generic-chart
+  only:
+    - master
+  when: on_success
+
+
+destroy_deployment:
+  stage: deploy
+  environment:
+    name: $CI_COMMIT_REF_NAME
+    action: stop
+  before_script:
+    - mkdir /tmp/kube2
+    - echo $KUBECONFIG_II | base64 -d > /tmp/kube2/config
+  script:
+    - helm delete
+        --purge
+        --kubeconfig /tmp/kube2/config
+        $CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG-$CI_PROJECT_NAMESPACE
+  when: manual

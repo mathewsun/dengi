@@ -1,0 +1,88 @@
+<div class="panel">
+<div class="panel__content">
+<h2>Оставить заявку на проект</h2>
+<form class="form js-action js-action-reset-after form-validate" enctype="multipart/form-data" method="post" action="ajax/form-upload-success.php?filename=popup-quote-success.html">
+<div class="form__items">
+<div class="cols-wrapper cols-wrapper--form form__item">
+<div class="cols">
+<div class="col">
+<div class="form__item">
+<div class="form__item-field form__item-field--error-absolute">
+<input type="text" class="textfield" name="name" placeholder="Как вас зовут?" data-rule-required="true" autocomplete="off">
+</div>
+</div>
+</div>
+<div class="col">
+<div class="form__item">
+<div class="form__item-field form__item-field--error-absolute">
+<input type="tel" class="textfield mask-phone-ru" name="phone" placeholder="Ваш телефон" data-rule-required="true" data-rule-phone="true" autocomplete="off">
+</div>
+</div>
+</div>
+<div class="col">
+<div class="form__item">
+<div class="form__item-field form__item-field--error-absolute">
+<input type="email" class="textfield" name="email" placeholder="Ваш e–mail" data-rule-required="true" data-rule-email="true" autocomplete="off">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="form__item">
+<div class="form__item-field form__item-field--error-absolute">
+<textarea class="textfield" name="message" placeholder="Пару слов о проекте" autocomplete="off" rows="1"></textarea>
+</div>
+</div>
+<div class="cols-wrapper cols-wrapper--links form__item">
+<div class="cols cols--auto">
+<div class="col col--fit">
+<a class="fileupload-btn" href="#" target="_blank" download>
+<span class="fileupload-btn-inner overflow-hidden">
+<svg class="icon">
+<use xlink:href="#icon-doc"></use>
+</svg><!--
+                                    --><span>Скачать бриф</span>
+</span>
+</a>
+</div>
+<div class="col">
+<div class="fileupload-widget js-fileupload-container js-form-disable-on-submit">
+<div class="fileupload-widget-inner">
+<div class="fileupload-btn">
+<span class="fileupload-btn-inner js-form-disable-on-submit overflow-hidden">
+<svg class="icon">
+<use xlink:href="#icon-attach"></use>
+</svg><!--
+                                            --><span>Прикрепить файл</span>
+<input type="file" name="file" class="js-fileupload" data-fileupload-url="ajax/form-upload-success.php?filename=popup-vacancy-success.html" data-fileupload-list="#fileupload-files" data-fileupload-label="Вложения">
+</span>
+<input class="js-file-upload-hash" type="hidden" name="hash">
+</div>
+<div class="fileupload-files-wrapper">
+<div class="fileupload-files-container">
+<div class="fileupload-files" id="fileupload-files"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="cols-wrapper cols-wrapper--actions form__actions">
+<div class="cols cols--auto">
+<div class="col col--fit">
+<button type="submit" class="btn btn--fullwidth btn--outline">
+Отправить
+</button>
+</div>
+<div class="col color-default-muted vmiddle">
+<div class="text-small color-muted-more mw360">
+<p>Нажимая на кнопку «Отправить» вы подтверждаете свое согласие на <a href="#" target="_blank">обработку персональных данных</a></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</form>
+</div>
+</div>

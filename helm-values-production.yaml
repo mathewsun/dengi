@@ -1,0 +1,20 @@
+deployment:
+  tier: backend
+  spec:
+    replicas: 2
+
+service:  
+  enabled: true
+  servicePort: 80
+  podPort: 80
+  ingress:
+    internal:
+      hostname: "{{ .Values.ci.name }}.{{ .Values.ci.namespace }}.k2.env.timo.group"
+    external:
+    - hostname: denginado.ru
+
+metrics:
+  enabled: false
+  servicePort: 80
+  podPort: null
+
